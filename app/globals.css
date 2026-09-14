@@ -1,26 +1,76 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Custom properties (CSS variables) for theming */
+@theme {
+  --color-gray-900: #111827;
+  --color-gray-800: #1f2937;
+  --color-gray-700: #374151;
+  --color-gray-400: #9ca3af;
+  --color-gray-300: #d1d5db;
+  --color-white: #ffffff;
+  --color-red-500: #ef4444;
+  --color-red-400: #f87171;
+  --color-green-500: #22c55e;
+  --color-green-600: #16a34a;
+  --color-black: #000000;
+  --color-transparent: transparent;
+  --color-current: currentColor;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Custom styles for motion tracking */
+video, 
+canvas {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Loading animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.animate-spin {
+  animation: spin 1s linear infinite;
 }
+
+/* Custom scrollbar for pose data */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Utility classes that might be needed */
+.bg-opacity-50 {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.bg-opacity-90 {
+  background-color: rgba(239, 68, 68, 0.9);
+}
+
+.bg-opacity-20 {
+  background-color: rgba(239, 68, 68, 0.2);
+}
+
+/* You might need to add more custom utilities if the component uses them */
