@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { HandLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 
-// ⚠️ Keep in sync with @mediapipe/tasks-vision in package.json (same as pose hook)
-const TASKS_VISION_VERSION = '0.10.14';
+import { WASM_URL } from '../utils/mediapipeConfig';
 
 function safeClose(instance: HandLandmarker | null) {
   if (!instance) return;
@@ -45,9 +44,7 @@ export function useHandLandmarker(options: UseHandLandmarkerOptions = {}) {
         setIsLoading(true);
         setError(null);
 
-        const vision = await FilesetResolver.forVisionTasks(
-          `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${TASKS_VISION_VERSION}/wasm`
-        );
+        const vision = await FilesetResolver.forVisionTasks(WASM_URL);
 
         const handLandmarker = await HandLandmarker.createFromOptions(vision, {
           baseOptions: { modelAssetPath: modelPath, delegate: 'CPU' },

@@ -1,6 +1,10 @@
 // One hand = 21 landmarks, each {x, y, z}
 type Landmark = { x: number; y: number; z: number; visibility?: number };
 
+export const HAND_DESCRIPTOR_LENGTH = 21 * 3;
+// Naruto seals are two-handed: descriptor = [screen-left hand, screen-right hand]
+export const SIGN_DESCRIPTOR_LENGTH = HAND_DESCRIPTOR_LENGTH * 2;
+
 // Strip position & scale so we keep only the SHAPE of the hand.
 export function normalizeHand(landmarks: Landmark[]): number[] {
   const wrist = landmarks[0];
@@ -17,12 +21,29 @@ export function normalizeHand(landmarks: Landmark[]): number[] {
   return vec;
 }
 
-// Build a descriptor from a SINGLE hand (whichever is visible)
-export function buildSignDescriptor(
-  hands: { landmarks: Landmark[]; handedness: 'Left' | 'Right' }[]
-): number[] | null {
-  if (hands.length === 0) return null;
-  return normalizeHand(hands[0].landmarks);
+type Hand = { landmarks: Landmark[]; handedness: 'Left' | 'Right' };
+
+// Descriptor for ONE hand (used for recording and single-hand templates).
+export function buildSingleHandDescriptor(hand: Hand): number[] {
+  return normalizeHand(hand.landmarks);
+}
+
+// Descriptor from BOTH hands, ordered by wrist x. Returns null unless two hands are visible.
+export function buildSignDescriptor(hands: Hand[]): number[] | null {
+  if (hands.length < 2) return null;
+  const [a, b] = [...hands]
+    .sort((h1, h2) => h1.landmarks[0].x - h2.landmarks[0].x)
+    .slice(0, 2);
+  return [...normalizeHand(a.landmarks), ...normalizeHand(b.landmarks)];
+}
+
+// Everything we can compare against templates: each single hand, plus the two-hand
+// descriptor when both are visible.
+export function buildCandidates(hands: Hand[]): number[][] {
+  const out = hands.map(buildSingleHandDescriptor);
+  const both = buildSignDescriptor(hands);
+  if (both) out.push(both);
+  return out;
 }
 
 function distance(a: number[], b: number[]): number {
@@ -31,23 +52,51 @@ function distance(a: number[], b: number[]): number {
   return Math.sqrt(sum);
 }
 
+// Swap the two hands' halves (hands crossing over each other can flip the x-order)
+function swapHands(d: number[]): number[] {
+  return [...d.slice(HAND_DESCRIPTOR_LENGTH), ...d.slice(0, HAND_DESCRIPTOR_LENGTH)];
+}
+
 export interface SignTemplate {
   name: string;
   descriptor: number[];
 }
 
-export function recognizeSign(
-  descriptor: number[],
+// Match threshold for a two-hand (126-d) descriptor. Shorter descriptors scale down
+// with sqrt(length) so a single hand uses ~2.1.
+// If real seals are missed raise this; if wrong seals fire lower it. The on-screen
+// "closest" readout shows the actual distances to help you tune.
+export const DEFAULT_MATCH_THRESHOLD = 3.0;
+const thresholdFor = (length: number, base: number) =>
+  base * Math.sqrt(length / SIGN_DESCRIPTOR_LENGTH);
+
+// Closest template across all candidates (single hands and/or both hands), as a
+// ratio to that length's threshold so 1-hand and 2-hand matches are comparable.
+export function nearestSign(
+  candidates: number[][],
   templates: SignTemplate[],
-  threshold = 0.6
-): { name: string; confidence: number } | null {
-  let best: SignTemplate | null = null;
-  let bestDist = Infinity;
-  for (const t of templates) {
-    if (t.descriptor.length !== descriptor.length) continue;
-    const d = distance(descriptor, t.descriptor);
-    if (d < bestDist) { bestDist = d; best = t; }
+  threshold = DEFAULT_MATCH_THRESHOLD
+): { name: string; distance: number; ratio: number } | null {
+  let best: { name: string; distance: number; ratio: number } | null = null;
+  for (const c of candidates) {
+    const variants = c.length === SIGN_DESCRIPTOR_LENGTH ? [c, swapHands(c)] : [c];
+    const limit = thresholdFor(c.length, threshold);
+    for (const t of templates) {
+      if (t.descriptor.length !== c.length) continue;
+      const d = Math.min(...variants.map(v => distance(v, t.descriptor)));
+      const ratio = d / limit;
+      if (!best || ratio < best.ratio) best = { name: t.name, distance: d, ratio };
+    }
   }
-  if (!best || bestDist > threshold) return null;
-  return { name: best.name, confidence: 1 - bestDist / threshold };
+  return best;
+}
+
+export function recognizeSign(
+  candidates: number[][],
+  templates: SignTemplate[],
+  threshold = DEFAULT_MATCH_THRESHOLD
+): { name: string; confidence: number } | null {
+  const best = nearestSign(candidates, templates, threshold);
+  if (!best || best.ratio > 1) return null;
+  return { name: best.name, confidence: 1 - best.ratio };
 }

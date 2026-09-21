@@ -1,64 +1,38 @@
-import { PoseLandmarker, PoseLandmarkerResult, HandLandmarker, HandLandmarkerResult } from '@mediapipe/tasks-vision';
+import { PoseLandmarker, HandLandmarker } from '@mediapipe/tasks-vision';
 
-// ... existing types ...
-
-export interface HandLandmarkPoint {
+export interface LandmarkPoint {
   x: number;
   y: number;
   z: number;
   visibility?: number;
 }
 
-export interface HandData {
+export interface PoseMetrics {
+  shoulderWidth: number;
+  hipWidth: number;
+  torsoHeight: number;
+}
+
+export interface PoseAngles {
+  leftElbow: number;
+  rightElbow: number;
+  leftKnee: number;
+  rightKnee: number;
+  leftShoulder: number;
+  rightShoulder: number;
+}
+
+export interface PoseData {
   timestamp: number;
-  landmarks: HandLandmarkPoint[];
-  handedness: 'Left' | 'Right' | 'Unknown';
-  fingers: FingerPositions;
-  gestures: HandGestures;
+  landmarks: LandmarkPoint[];
+  metrics: PoseMetrics;
+  angles: PoseAngles;
 }
 
-export interface FingerPositions {
-  thumb: FingerState;
-  index: FingerState;
-  middle: FingerState;
-  ring: FingerState;
-  pinky: FingerState;
+export interface HandInfo {
+  handedness: 'Left' | 'Right';
+  landmarks: LandmarkPoint[];
 }
 
-export interface FingerState {
-  isExtended: boolean;
-  tip: HandLandmarkPoint;
-  dip: HandLandmarkPoint;
-  pip: HandLandmarkPoint;
-  mcp: HandLandmarkPoint;
-  angle: number;
-}
-
-export interface HandGestures {
-  isOpen: boolean;
-  isFist: boolean;
-  isPeace: boolean;
-  isThumbsUp: boolean;
-  isPointing: boolean;
-  gestureName: string;
-}
-
-export interface MotionTrackerProps {
-  onPoseUpdate?: (data: PoseData) => void;
-  onLandmarksUpdate?: (landmarks: LandmarkPoint[]) => void;
-  onHandUpdate?: (handData: HandData) => void;
-  onError?: (error: Error) => void;
-  className?: string;
-  options?: {
-    modelPath?: string;
-    minDetectionConfidence?: number;
-    minPresenceConfidence?: number;
-    minTrackingConfidence?: number;
-    numPoses?: number;
-    runningMode?: 'VIDEO' | 'IMAGE';
-    enableHandTracking?: boolean;
-  };
-}
-
+export type PoseLandmarkerInstance = PoseLandmarker;
 export type HandLandmarkerInstance = HandLandmarker;
-export type HandResult = HandLandmarkerResult;

@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { PoseLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 import { PoseLandmarkerInstance } from '../types/mediapipes';
 
-// ⚠️ SET THIS to the exact @mediapipe/tasks-vision version in your package.json
-const TASKS_VISION_VERSION = '0.10.14';
+import { WASM_URL } from '../utils/mediapipeConfig';
 
 interface UsePoseLandmarkerOptions {
   modelPath?: string;
@@ -48,9 +47,7 @@ export function usePoseLandmarker(options: UsePoseLandmarkerOptions = {}) {
         setIsLoading(true);
         setError(null);
 
-        const vision = await FilesetResolver.forVisionTasks(
-          `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${TASKS_VISION_VERSION}/wasm`
-        );
+        const vision = await FilesetResolver.forVisionTasks(WASM_URL);
 
         const poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
           baseOptions: {
